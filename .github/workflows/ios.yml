@@ -11,12 +11,12 @@ jobs:
   build-android:
     name: Build Android APK
     runs-on: ubuntu-latest
-    defaults:
-      run:
-        working-directory: ./mobile-app
     steps:
       - name: Checkout
         uses: actions/checkout@v4
+
+      - name: List files (Debug)
+        run: ls -la
 
       - name: Setup Node.js
         uses: actions/setup-node@v4
@@ -33,18 +33,20 @@ jobs:
         uses: android-actions/setup-android@v3
 
       - name: Install Dependencies
+        working-directory: mobile-app
         run: npm install
 
       - name: Build Web Assets
+        working-directory: mobile-app
         run: npm run build
 
       - name: Sync Capacitor
+        working-directory: mobile-app
         run: npx cap sync android
 
       - name: Build APK
-        run: |
-          cd android
-          ./gradlew assembleDebug
+        working-directory: mobile-app/android
+        run: ./gradlew assembleDebug
 
       - name: Upload APK
         uses: actions/upload-artifact@v4
@@ -55,12 +57,12 @@ jobs:
   build-ios:
     name: Build iOS IPA (Unsigned)
     runs-on: macos-latest
-    defaults:
-      run:
-        working-directory: ./mobile-app
     steps:
       - name: Checkout
         uses: actions/checkout@v4
+
+      - name: List files (Debug)
+        run: ls -la
 
       - name: Setup Node.js
         uses: actions/setup-node@v4
@@ -68,27 +70,32 @@ jobs:
           node-version: '20'
 
       - name: Install Dependencies
+        working-directory: mobile-app
         run: npm install
 
       - name: Build Web Assets
+        working-directory: mobile-app
         run: npm run build
 
       - name: Sync Capacitor
+        working-directory: mobile-app
         run: npx cap sync ios
 
       - name: Build iOS App
+        working-directory: mobile-app/ios/App
         run: |
-          cd ios/App
           xcodebuild -scheme App -destination 'generic/platform=iOS' -configuration Release clean archive -archivePath App.xcarchive CODE_SIGN_IDENTITY="" CODE_SIGNING_REQUIRED=NO CODE_SIGNING_ALLOWED=NO
 
       - name: Export IPA
+        working-directory: mobile-app/ios/App
         run: |
-          cd ios/App
           xcodebuild -exportArchive -archivePath App.xcarchive -exportPath . -exportOptionsPlist ../../ios-export-options.plist || true
           # Fallback: Create Payload directory and zip it manually if export fails due to signing
-          mkdir Payload
-          cp -r App.xcarchive/Products/Applications/App.app Payload/
-          zip -r App.ipa Payload
+          if [ ! -f App.ipa ]; then
+            mkdir Payload
+            cp -r App.xcarchive/Products/Applications/App.app Payload/
+            zip -r App.ipa Payload
+          fi
 
       - name: Upload IPA
         uses: actions/upload-artifact@v4
