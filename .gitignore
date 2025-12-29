@@ -1,0 +1,13 @@
+App/build
+App/Pods
+App/output
+App/app/public
+DerivedData
+xcuserdata
+
+# Cordova plugins for Capacitor
+capacitor-cordova-ios-plugins
+
+# Generated Config files
+App/app/capacitor.config.json
+App/app/config.xml
